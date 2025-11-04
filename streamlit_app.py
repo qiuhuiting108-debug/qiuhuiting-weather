@@ -1,128 +1,115 @@
-# ☁️ Qiu Huiting’s Weather App
-# Uses the Open-Meteo API (no API key required)
+# 🌍 Qiu Huiting’s Open-Meteo Interactive Weather Dashboard
+# Interactive world map + city input + weather visualization using Open-Meteo API
 
 import streamlit as st
 import requests
-from datetime import datetime
+import pandas as pd
+from streamlit_folium import st_folium
+import folium
 
-# -------------------- PAGE CONFIG --------------------
-st.set_page_config(page_title="Qiu Huiting’s Weather App", page_icon="☁️", layout="centered")
+# ---------------- PAGE SETTINGS ----------------
+st.set_page_config(page_title="Qiu Huiting’s Weather Dashboard", page_icon="🌍", layout="wide")
 
-# -------------------- CUSTOM STYLE --------------------
+# ---------------- STYLE ----------------
 st.markdown("""
 <style>
-body {
-    background: linear-gradient(to bottom right, #a3d8f4, #f7f7f7);
-}
-h1 {
-    text-align: center;
-    font-weight: 800;
-    color: #1b3b5f;
-}
-p.subtitle {
-    text-align: center;
-    color: gray;
-    margin-top: -10px;
-    margin-bottom: 30px;
-}
-div[data-testid="stTextInput"] input {
-    border-radius: 20px;
-    background-color: white;
-    padding: 10px 15px;
-    font-size: 16px;
-}
-.stButton>button {
-    background-color: #1b6ca8;
-    color: white;
-    border-radius: 20px;
-    font-weight: 600;
-    padding: 8px 25px;
-}
-.weather-card {
-    background-color: white;
-    border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-    text-align: center;
+body {background-color:#f7f7f7;}
+h1 {text-align:center; font-weight:800; color:#1b3b5f;}
+.sidebar .sidebar-content {background-color:#f4f6f9;}
+.stButton > button {
+    border-radius:20px;
+    background-color:#1b6ca8;
+    color:white;
+    font-weight:600;
+    padding:6px 20px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------- HEADER --------------------
-st.markdown("<h1>☁️ Qiu Huiting’s Weather App</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Check real-time temperature and humidity around the world</p>", unsafe_allow_html=True)
+# ---------------- HEADER ----------------
+st.markdown("<h1>🌦️ Qiu Huiting’s Open-Meteo Interactive Weather Dashboard</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:gray;'>Click on the world map or type a city name to visualize weather data.</p>", unsafe_allow_html=True)
 
-# -------------------- SEARCH BOX --------------------
-city = st.text_input("Enter a city name:", value="Seoul")
+# ---------------- SIDEBAR ----------------
+st.sidebar.header("🌍 Choose Location Method")
+method = st.sidebar.radio("Select how to choose a location:", ["Click on Map", "Enter City Name"])
 
-# -------------------- API FUNCTIONS --------------------
-def geocode_city(city_name):
-    """Get latitude and longitude from Open-Meteo Geocoding API"""
+# ---------------- FUNCTIONS ----------------
+def geocode_city(city):
+    """Convert city name to coordinates"""
     url = "https://geocoding-api.open-meteo.com/v1/search"
-    params = {"name": city_name, "count": 1}
-    r = requests.get(url, params=params)
+    r = requests.get(url, params={"name": city, "count": 1})
     data = r.json()
     results = data.get("results")
     if not results:
         return None
     item = results[0]
-    return {
-        "name": item["name"],
-        "lat": item["latitude"],
-        "lon": item["longitude"],
-        "country": item.get("country", "")
-    }
+    return item["latitude"], item["longitude"], item["name"], item.get("country", "")
 
-def get_weather(lat, lon):
-    """Get weather data from Open-Meteo API"""
+def get_weather(lat, lon, variable):
+    """Get hourly weather data"""
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
-        "latitude": lat,
-        "longitude": lon,
-        "current": "temperature_2m,relative_humidity_2m,weather_code",
+        "latitude": lat, "longitude": lon,
+        "hourly": variable,
+        "forecast_days": 2,
         "timezone": "auto"
     }
-    r = requests.get(url, params=params)
-    return r.json()
+    return requests.get(url, params=params).json()
 
-# -------------------- WEATHER ICONS --------------------
-def weather_icon(code):
-    icons = {
-        0: "☀️ Clear sky",
-        1: "🌤️ Mostly clear",
-        2: "⛅ Partly cloudy",
-        3: "☁️ Overcast",
-        45: "🌫️ Fog",
-        48: "🌫️ Fog",
-        51: "🌦️ Light drizzle",
-        61: "🌧️ Rain",
-        71: "❄️ Snow",
-        95: "⛈️ Thunderstorm"
-    }
-    return icons.get(code, "🌍 Weather data")
+# ---------------- MAIN LOGIC ----------------
+if method == "Click on Map":
+    st.markdown("## 🗺️ 1. Click anywhere on the map to select a location")
 
-# -------------------- MAIN BUTTON --------------------
-if st.button("🔍 Show Weather"):
-    if not city.strip():
-        st.warning("Please enter a city name.")
-    else:
-        with st.spinner("Fetching weather data..."):
-            info = geocode_city(city)
-            if not info:
-                st.error("City not found. Try another name.")
-            else:
-                weather = get_weather(info["lat"], info["lon"])
-                current = weather.get("current", {})
-                temp = current.get("temperature_2m")
-                humidity = current.get("relative_humidity_2m")
-                code = current.get("weather_code", 0)
-                description = weather_icon(code)
-                now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # World map view
+    m = folium.Map(location=[20, 0], zoom_start=2)
+    map_data = st_folium(m, height=450, width=750)
 
-                st.markdown("<div class='weather-card'>", unsafe_allow_html=True)
-                st.markdown(f"### 📍 {info['name']}, {info['country']}")
-                st.markdown(f"**Time:** {now}")
-                st.markdown(f"**Temperature:** {temp}°C")
-                st.markdown(f"**Humidity:** {humidity}%")
-                st.markdown(f"**Condition:** {description}")
-                st.markdown("</div>", unsafe_allow_html=True)
+    if map_data and map_data["last_clicked"]:
+        lat = map_data["last_clicked"]["lat"]
+        lon = map_data["last_clicked"]["lng"]
+        st.success(f"✅ Selected location: {lat:.2f}, {lon:.2f}")
+
+        st.markdown("### 📊 2. Choose a variable to visualize:")
+        variable = st.multiselect("Select weather variables:",
+                                  ["temperature_2m", "relative_humidity_2m", "windspeed_10m"],
+                                  default=["temperature_2m"])
+
+        if st.button("Show Weather Data"):
+            for var in variable:
+                data = get_weather(lat, lon, var)
+                hourly = data["hourly"]
+                df = pd.DataFrame({
+                    "time": hourly["time"],
+                    var: hourly[var]
+                })
+                st.line_chart(df.set_index("time"))
+            st.info("✅ Visualization complete!")
+
+elif method == "Enter City Name":
+    st.markdown("## 🏙️ 1. Type a city name")
+    city = st.text_input("City name:", value="Seoul")
+
+    st.markdown("### 📊 2. Choose a variable to visualize:")
+    variable = st.multiselect("Select weather variables:",
+                              ["temperature_2m", "relative_humidity_2m", "windspeed_10m"],
+                              default=["temperature_2m"])
+
+    if st.button("🔍 Show Data"):
+        loc = geocode_city(city)
+        if not loc:
+            st.error("❌ City not found. Try another name.")
+        else:
+            lat, lon, name, country = loc
+            st.success(f"📍 {name}, {country}  ({lat:.2f}, {lon:.2f})")
+
+            for var in variable:
+                data = get_weather(lat, lon, var)
+                hourly = data["hourly"]
+                df = pd.DataFrame({
+                    "time": hourly["time"],
+                    var: hourly[var]
+                })
+                st.line_chart(df.set_index("time"))
+            st.info("✅ Visualization complete!")
+
