@@ -1,13 +1,14 @@
-# 🌦️ Qiu Huiting’s Open-Meteo Interactive Weather Dashboard
+# 🌍 Qiu Huiting’s Open-Meteo Interactive Weather Dashboard
 
-An interactive world weather visualization built with **Streamlit**, **Folium**, and the **Open-Meteo API**.
+An English interactive dashboard using **Streamlit + Folium + Open-Meteo API**.  
+Users can click anywhere on a **world map** or type a **city name** to see real-time weather charts.
 
 ### Features
-- 🌍 World map: Click any point to select location  
-- 🏙️ City input option  
-- 📊 Choose variables: temperature, humidity, or wind speed  
-- Interactive line charts  
-- Modern, minimal English UI  
+- 🌎 Clickable global map
+- 🏙️ City name input option
+- 📈 Choose among temperature, precipitation, humidity, wind speed
+- 🕒 Interactive line chart visualization
+- Beautiful minimalist English interface
 
 ### Run locally
 ```bash
