@@ -1,13 +1,13 @@
-# ☁️ Qiu Huiting’s Weather App
+# 🌦️ Qiu Huiting’s Open-Meteo Interactive Weather Dashboard
 
-An interactive weather app built with **Streamlit** and **Open-Meteo API**.  
-Type any city name and get real-time temperature and humidity.
+An interactive world weather visualization built with **Streamlit**, **Folium**, and the **Open-Meteo API**.
 
 ### Features
-- Real-time weather data (no API key required)
-- Rounded white card design with icons
-- Beautiful gradient background
-- Works for cities worldwide
+- 🌍 World map: Click any point to select location  
+- 🏙️ City input option  
+- 📊 Choose variables: temperature, humidity, or wind speed  
+- Interactive line charts  
+- Modern, minimal English UI  
 
 ### Run locally
 ```bash
